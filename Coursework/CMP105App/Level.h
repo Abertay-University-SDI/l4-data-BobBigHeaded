@@ -19,7 +19,10 @@ private:
     void UpdateCamera();
     bool CheckWinCondition();
     void manageCollisions();
+    void writeHighScore(float time);
+    void displayScoreboard();
 
+    sf::Text m_highscores;
     sf::View m_cameraView;
 
     // Entities

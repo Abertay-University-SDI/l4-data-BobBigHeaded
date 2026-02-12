@@ -1,7 +1,11 @@
 #include "Level.h"
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <algorithm>
 
 Level::Level(sf::RenderWindow& hwnd, Input& in) :
-    BaseLevel(hwnd, in), m_timerText(m_font), m_winText(m_font)
+    BaseLevel(hwnd, in), m_timerText(m_font), m_winText(m_font), m_highscores(m_font)
 {
     m_isGameOver = false;
 
@@ -39,6 +43,11 @@ Level::Level(sf::RenderWindow& hwnd, Input& in) :
     m_timerText.setFont(m_font);
     m_timerText.setCharacterSize(24);
     m_timerText.setFillColor(sf::Color::White);
+
+    m_highscores.setFont(m_font);
+    m_highscores.setCharacterSize(24);
+    m_highscores.setFillColor(sf::Color::Black);
+    m_highscores.setPosition({ 400.f, 175.f });
 
     // "Game Over" text setup
     m_winText.setFont(m_font);
@@ -164,6 +173,43 @@ void Level::manageCollisions()
     }
 }
 
+void Level::writeHighScore(float time) {
+    std::ofstream file("data/highscores.csv", std::ios::app);
+
+    if (!file.good()) {
+        std::cerr << "File could not be found" << std::endl;
+    }
+
+    file << std::fixed << std::setprecision(2) << time << "\n";
+
+    file.close();
+}
+
+void Level::displayScoreboard() {
+    std::ifstream file("data/highscores.csv");
+
+    m_highscores.setString("Highscores: \n");
+    std::vector<float> scores;
+
+    //
+
+    std::string line;
+    while (std::getline(file, line)) {
+        scores.push_back(std::stof(line));
+    }
+
+    std::sort(scores.begin(), scores.end());
+
+    for (auto i : scores) {
+        std::stringstream score;
+        score << std::fixed << std::setprecision(2) << i;
+
+        m_highscores.setString(m_highscores.getString() + score.str() + "\n");
+    }
+
+    file.close();
+}
+
 // Update game objects
 void Level::update(float dt)
 {
@@ -184,6 +230,10 @@ void Level::update(float dt)
     UpdateCamera();
     m_isGameOver = CheckWinCondition();
 
+    if (m_isGameOver) {
+        writeHighScore(timeElapsed);
+        displayScoreboard();
+    }
 }
 
 // Render level
@@ -200,6 +250,7 @@ void Level::render()
     m_window.draw(*m_playerRabbit);
     m_window.draw(m_timerText);
     m_window.draw(m_winText);
+    m_window.draw(m_highscores);
     
 	endDraw();
 }
